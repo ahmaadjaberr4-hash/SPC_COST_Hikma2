@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPC Cost Report — Hikma AI Engineering</title>
+<meta name="description" content="Azure AI cost analysis for the SPC Generator project — GPT-4.1 token usage, ACU Document Intelligence pricing, and interactive cost calculator.">
+<meta name="author" content="Ahmad S. Jaber — Hikma Pharmaceuticals AI Engineering">
+<meta name="robots" content="noindex, nofollow">
+
+<!-- Open Graph (looks good if shared as a link) -->
+<meta property="og:title" content="SPC Cost Report — Hikma AI Engineering">
+<meta property="og:description" content="Interactive Azure AI cost breakdown for the SPC Generator: real GPT-4.1 usage data + ACU pricing.">
+<meta property="og:type" content="website">
+
+<!-- Favicon inline SVG as data URI -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='6' fill='%230A1F44'/><text x='16' y='22' text-anchor='middle' font-size='18' font-family='Arial' font-weight='bold' fill='%23F05A28'>H</text></svg>">
+
+<!-- Google Fonts with display=swap for perf -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --hk-navy:    #0A1F44;
+    --hk-coral:   #F05A28;
+    --hk-coral-lt:#FDE8DF;
+    --hk-navy-lt: #E8EDF5;
+    --hk-teal:    #1D9E75;
+    --hk-teal-lt: #E3F5EE;
+    --hk-amber:   #E59A00;
+    --hk-amber-lt:#FEF3D0;
+    --hk-blue-lt: #EBF2FB;
+    --hk-blue:    #0C447C;
+    --white:      #FFFFFF;
+    --gray-50:    #F8F9FB;
+    --gray-100:   #EEF0F4;
+    --gray-200:   #D8DCE6;
+    --gray-400:   #8E96AB;
+    --gray-600:   #4B5468;
+    --gray-900:   #111827;
+    --radius-sm:  6px;
+    --radius-md:  10px;
+    --radius-lg:  14px;
+    --shadow-sm:  0 1px 3px rgba(10,31,68,.07), 0 1px 2px rgba(10,31,68,.04);
+    --shadow-md:  0 4px 12px rgba(10,31,68,.10), 0 1px 3px rgba(10,31,68,.06);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-900);
+    min-height: 100vh;
+  }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    background: var(--hk-navy);
+    padding: 0 32px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  }
+  .topnav-left { display: flex; align-items: center; gap: 20px; }
+  .hk-logo {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--white);
+    letter-spacing: -0.5px;
+    text-decoration: none;
+  }
+  .hk-logo span { color: var(--hk-coral); }
+  .nav-divider { width: 1px; height: 20px; background: rgba(255,255,255,.2); }
+  .nav-label { font-size: 13px; color: rgba(255,255,255,.6); font-weight: 400; }
+  .nav-badge {
+    font-size: 11px;
+    background: var(--hk-coral);
+    color: white;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-weight: 500;
+  }
+  .nav-right { font-size: 13px; color: rgba(255,255,255,.5); }
+
+  /* ── SUB HEADER ── */
+  .subheader {
+    background: var(--hk-coral);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .subheader h1 {
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    letter-spacing: .01em;
+  }
+  .subheader p { font-size: 12px; color: rgba(255,255,255,.85); margin-top: 2px; }
+  .subheader-sep { flex: 1; min-width: 20px; }
+  .date-chip {
+    font-size: 11px;
+    background: rgba(255,255,255,.2);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+
+  /* ── MAIN ── */
+  .main { max-width: 960px; margin: 0 auto; padding: 28px 24px 48px; }
+
+  /* ── SOURCE BOX ── */
+  .source-box {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-left: 4px solid var(--hk-teal);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    margin-bottom: 24px;
+    font-size: 12.5px;
+    color: var(--gray-600);
+    line-height: 1.8;
+    box-shadow: var(--shadow-sm);
+  }
+  .source-box strong.label {
+    color: var(--hk-navy);
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 10px;
+  }
+  .source-rows { display: flex; flex-direction: column; gap: 7px; }
+  .source-row { display: flex; align-items: flex-start; gap: 10px; }
+  .src-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--hk-teal); color: white; font-size: 10px; font-weight: 700;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .source-row em { font-style: normal; font-weight: 600; color: var(--hk-navy); }
+
+  /* ── KPI GRID ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .kpi {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 16px 18px;
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 3px;
+    background: var(--hk-coral);
+  }
+  .kpi.accent { border-left: 4px solid var(--hk-coral); padding-left: 14px; }
+  .kpi.accent::before { display: none; }
+  .kpi-label { font-size: 11px; font-weight: 500; color: var(--gray-400); text-transform: uppercase; letter-spacing: .06em; margin-bottom: 6px; }
+  .kpi-label.coral { color: var(--hk-coral); }
+  .kpi-value { font-size: 26px; font-weight: 700; color: var(--hk-navy); line-height: 1; }
+  .kpi-value.coral { color: var(--hk-coral); }
+  .kpi-sub { font-size: 11px; color: var(--gray-400); margin-top: 5px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    margin-bottom: 16px;
+    box-shadow: var(--shadow-sm);
+  }
+  .card-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 18px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .card-icon {
+    width: 32px; height: 32px; border-radius: var(--radius-sm);
+    background: var(--hk-coral-lt);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .card-icon.teal  { background: var(--hk-teal-lt); }
+  .card-icon.navy  { background: var(--hk-navy-lt); }
+  .card h3 { font-size: 14px; font-weight: 600; color: var(--hk-navy); }
+  .card h3 small { font-weight: 400; color: var(--gray-400); font-size: 12px; margin-left: 6px; }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead tr { background: var(--gray-50); }
+  th {
+    text-align: left; color: var(--gray-400);
+    font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .05em;
+    padding: 9px 12px; border-bottom: 1px solid var(--gray-200);
+  }
+  td {
+    padding: 11px 12px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-600);
+    vertical-align: middle;
+  }
+  td:first-child { color: var(--gray-900); font-weight: 500; }
+  tr:last-child td { border-bottom: none; }
+  .total-row td {
+    background: var(--hk-navy) !important;
+    color: white !important;
+    font-weight: 700 !important;
+    font-size: 13.5px;
+    border-bottom: none;
+  }
+  .total-row td:last-child { color: var(--hk-coral) !important; font-size: 15px; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 500;
+  }
+  .b-green  { background: var(--hk-teal-lt);  color: #0D6B4E; }
+  .b-blue   { background: var(--hk-blue-lt);  color: var(--hk-blue); }
+  .b-amber  { background: var(--hk-amber-lt); color: #7A5100; }
+
+  /* ── WARN BOX ── */
+  .warn-box {
+    background: var(--hk-amber-lt);
+    border-left: 4px solid var(--hk-amber);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    font-size: 12.5px;
+    color: #5C3D00;
+    line-height: 1.7;
+    margin-top: 14px;
+  }
+  .warn-box code {
+    background: rgba(0,0,0,.07);
+    padding: 1px 5px;
+    border-radius: 3px;
+    font-family: 'Courier New', monospace;
+    font-size: 11.5px;
+  }
+
+  /* ── SLIDERS ── */
+  .slider-block { display: flex; flex-direction: column; gap: 16px; }
+  .slider-row { display: grid; grid-template-columns: 190px 1fr 100px; align-items: center; gap: 14px; }
+  .slider-row label { font-size: 13px; color: var(--gray-600); font-weight: 500; }
+  .slider-row input[type=range] {
+    -webkit-appearance: none; appearance: none;
+    width: 100%; height: 5px; border-radius: 3px;
+    background: linear-gradient(to right, var(--hk-coral) 0%, var(--hk-coral) var(--pct, 50%), var(--gray-200) var(--pct, 50%));
+    outline: none; cursor: pointer;
+  }
+  .slider-row input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--hk-coral);
+    border: 2.5px solid white;
+    box-shadow: 0 1px 5px rgba(240,90,40,.4);
+    cursor: pointer;
+  }
+  .slider-row input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--hk-coral);
+    border: 2.5px solid white;
+    cursor: pointer;
+  }
+  .slider-val {
+    font-size: 13px; font-weight: 600; color: var(--hk-navy);
+    background: var(--gray-100); border-radius: var(--radius-sm);
+    padding: 5px 10px; text-align: center;
+  }
+
+  .total-pill {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--hk-navy);
+    border-radius: var(--radius-md);
+    padding: 16px 22px;
+    margin-top: 20px;
+  }
+  .total-pill .tl { font-size: 13px; color: rgba(255,255,255,.7); font-weight: 500; }
+  .total-pill .tv { font-size: 28px; font-weight: 700; color: var(--hk-coral); }
+
+  /* ── SCALE GRID ── */
+  .scale-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .scale-cell {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-md);
+    padding: 14px;
+    text-align: center;
+    transition: background .15s, border-color .15s;
+  }
+  .scale-cell:hover { background: var(--hk-navy-lt); border-color: #b8c6de; }
+  .scale-cell .sn { font-size: 11px; color: var(--gray-400); font-weight: 500; margin-bottom: 6px; }
+  .scale-cell .sv { font-size: 20px; font-weight: 700; color: var(--hk-navy); }
+
+  /* ── FOOTER ── */
+  .foot {
+    background: var(--hk-navy);
+    color: rgba(255,255,255,.4);
+    font-size: 11.5px;
+    padding: 16px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .foot strong { color: rgba(255,255,255,.7); }
+  .foot a { color: var(--hk-coral); text-decoration: none; }
+
+  /* ── MONO FONT for formulas ── */
+  .mono { font-family: 'Courier New', monospace; font-size: 12px; color: var(--gray-400); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .topnav { padding: 0 16px; }
+    .subheader { padding: 10px 16px; }
+    .main { padding: 16px 14px 32px; }
+    .slider-row { grid-template-columns: 1fr 80px; }
+    .slider-row label { display: none; }
+    .scale-grid { grid-template-columns: repeat(2, 1fr); }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .nav-right { display: none; }
+    .foot { flex-direction: column; text-align: center; }
+  }
+
+  @media (max-width: 400px) {
+    .scale-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── PRINT ── */
+  @media print {
+    .topnav, .subheader { position: static; }
+    .card { break-inside: avoid; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOP NAV -->
+<nav class="topnav" role="banner">
+  <div class="topnav-left">
+    <span class="hk-logo">hikma<span>.</span></span>
+    <div class="nav-divider" aria-hidden="true"></div>
+    <span class="nav-label">AI Engineering</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="nav-badge">SPC Generator</span>
+    <span class="nav-right">Ahmad S. Jaber</span>
+  </div>
+</nav>
+
+<!-- SUB HEADER -->
+<div class="subheader" role="heading" aria-level="1">
+  <div>
+    <h1>SPC Cost Report</h1>
+    <p>Azure AI Foundry · GPT-4.1 · Jun 3–10, 2026</p>
+  </div>
+  <div class="subheader-sep"></div>
+  <span class="date-chip">📊 Real Azure Data</span>
+</div>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- DATA SOURCES -->
+  <div class="source-box" role="note" aria-label="Data sources">
+    <strong class="label">Data Sources Used</strong>
+    <div class="source-rows">
+      <div class="source-row">
+        <span class="src-num" aria-hidden="true">1</span>
+        <span>Azure AI Foundry → gpt-4.1 Monitor: <em>241 requests · 3,329 avg input tokens · 1,872 avg output tokens · $1.95 total</em> (7 days)</span>
+      </div>
+      <div class="source-row">
+        <span class="src-num" aria-hidden="true">2</span>
+        <span>Azure ACU pricing page: Document Standard = <em>$5 per 1,000 pages ($0.005/page)</em></span>
+      </div>
+      <div class="source-row">
+        <span class="src-num" aria-hidden="true">3</span>
+        <span>deploy.zip codebase: <em>16 agent calls per SPC, 2 ACU calls per SPC</em></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" role="region" aria-label="Key metrics">
+    <div class="kpi">
+      <div class="kpi-label">Avg Tokens / Call</div>
+      <div class="kpi-value">5,201</div>
+      <div class="kpi-sub">3,329 input + 1,872 output</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Token Cost / SPC</div>
+      <div class="kpi-value" id="tokCostOut">$0.35</div>
+      <div class="kpi-sub">16 calls × real avg tokens</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">ACU Cost / SPC</div>
+      <div class="kpi-value" id="acuCostOut">$0.31</div>
+      <div class="kpi-sub">~62 pages × $0.005</div>
+    </div>
+    <div class="kpi accent">
+      <div class="kpi-label coral">Total / SPC</div>
+      <div class="kpi-value coral" id="kpiTotal">$0.66</div>
+      <div class="kpi-sub">Document Standard · $0.005/page</div>
+    </div>
+  </div>
+
+  <!-- COST BREAKDOWN -->
+  <section class="card" aria-labelledby="breakdown-title">
+    <div class="card-header">
+      <div class="card-icon" aria-hidden="true">🧮</div>
+      <h3 id="breakdown-title">Cost Breakdown per SPC</h3>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Component</th>
+          <th scope="col">Formula</th>
+          <th scope="col">Source</th>
+          <th scope="col" style="text-align:right">Cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>GPT-4.1 Input Tokens</td>
+          <td class="mono">16 × 3,329 tok × $0.000002</td>
+          <td><span class="badge b-green">✓ Portal screenshot</span></td>
+          <td style="text-align:right" class="mono" id="inputCost">$0.107</td>
+        </tr>
+        <tr>
+          <td>GPT-4.1 Output Tokens</td>
+          <td class="mono">16 × 1,872 tok × $0.000008</td>
+          <td><span class="badge b-green">✓ Portal screenshot</span></td>
+          <td style="text-align:right" class="mono" id="outputCost">$0.239</td>
+        </tr>
+        <tr>
+          <td>ACU — Reference SPC</td>
+          <td class="mono" id="refFormula">50 pages × $0.005</td>
+          <td><span class="badge b-blue">✓ ACU pricing page</span></td>
+          <td style="text-align:right" class="mono" id="refCost">$0.250</td>
+        </tr>
+        <tr>
+          <td>ACU — CMC PDF</td>
+          <td class="mono" id="cmcFormula">12 pages × $0.005</td>
+          <td><span class="badge b-blue">✓ ACU pricing page</span></td>
+          <td style="text-align:right" class="mono" id="cmcCost">$0.060</td>
+        </tr>
+        <tr class="total-row">
+          <td colspan="3">Total per SPC</td>
+          <td style="text-align:right" id="totalCost">$0.656</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </section>
+
+  <!-- ADJUST PARAMETERS -->
+  <section class="card" aria-labelledby="adjust-title">
+    <div class="card-header">
+      <div class="card-icon teal" aria-hidden="true">⚙️</div>
+      <h3 id="adjust-title">Adjust Parameters <small>Drag sliders to model scenarios</small></h3>
+    </div>
+    <div class="slider-block">
+      <div class="slider-row">
+        <label for="refPages">Reference SPC pages</label>
+        <input type="range" min="20" max="100" value="50" step="1" id="refPages" aria-label="Reference SPC pages">
+        <span class="slider-val" id="refPagesOut" aria-live="polite">50 pg</span>
+      </div>
+      <div class="slider-row">
+        <label for="cmcPages">CMC PDF pages</label>
+        <input type="range" min="5" max="30" value="12" step="1" id="cmcPages" aria-label="CMC PDF pages">
+        <span class="slider-val" id="cmcPagesOut" aria-live="polite">12 pg</span>
+      </div>
+      <div class="slider-row">
+        <label for="acuTier">ACU tier ($/page)</label>
+        <input type="range" min="1" max="3" value="3" step="1" id="acuTier" aria-label="ACU pricing tier">
+        <span class="slider-val" id="acuTierOut" aria-live="polite">$0.005</span>
+      </div>
+    </div>
+    <div class="total-pill" role="status" aria-live="polite">
+      <span class="tl">Estimated cost per SPC</span>
+      <span class="tv" id="totalOut">$0.66</span>
+    </div>
+  </section>
+
+  <!-- COST AT SCALE -->
+  <section class="card" aria-labelledby="scale-title">
+    <div class="card-header">
+      <div class="card-icon navy" aria-hidden="true">📈</div>
+      <h3 id="scale-title">Cost at Scale <small>Updates with slider settings above</small></h3>
+    </div>
+    <div class="scale-grid">
+      <div class="scale-cell"><div class="sn">10 SPCs / month</div><div class="sv" id="p10">$7</div></div>
+      <div class="scale-cell"><div class="sn">50 SPCs / month</div><div class="sv" id="p50">$33</div></div>
+      <div class="scale-cell"><div class="sn">100 SPCs / month</div><div class="sv" id="p100">$66</div></div>
+      <div class="scale-cell"><div class="sn">250 SPCs / month</div><div class="sv" id="p250">$165</div></div>
+      <div class="scale-cell"><div class="sn">500 SPCs / month</div><div class="sv" id="p500">$330</div></div>
+      <div class="scale-cell"><div class="sn">1,000 SPCs / month</div><div class="sv" id="p1000">$660</div></div>
+    </div>
+  </section>
+
+  <!-- CONFIDENCE TABLE -->
+  <section class="card" aria-labelledby="confidence-title">
+    <div class="card-header">
+      <div class="card-icon teal" aria-hidden="true">✅</div>
+      <h3 id="confidence-title">Confidence Level per Number</h3>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Number</th>
+          <th scope="col">Confidence</th>
+          <th scope="col">Basis</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tokens per call (3,329 / 1,872)</td>
+          <td><span class="badge b-green">✓ Real — portal</span></td>
+          <td style="font-size:12px;color:var(--gray-400)">Directly from Azure AI Foundry monitor</td>
+        </tr>
+        <tr>
+          <td>GPT-4.1 pricing ($2/$8 per 1M)</td>
+          <td><span class="badge b-green">✓ Real — confirmed</span></td>
+          <td style="font-size:12px;color:var(--gray-400)">Provided by Ahmad S. Jaber</td>
+        </tr>
+        <tr>
+          <td>ACU price ($0.005/page)</td>
+          <td><span class="badge b-blue">✓ Real — screenshot</span></td>
+          <td style="font-size:12px;color:var(--gray-400)">Azure pricing page (Standard tier assumed)</td>
+        </tr>
+        <tr>
+          <td>16 agent calls per SPC</td>
+          <td><span class="badge b-green">✓ Real — codebase</span></td>
+          <td style="font-size:12px;color:var(--gray-400)">Counted from deploy.zip section files</td>
+        </tr>
+        <tr>
+          <td>Pages per SPC (50 ref + 12 CMC)</td>
+          <td><span class="badge b-amber">~ Estimate</span></td>
+          <td style="font-size:12px;color:var(--gray-400)">Typical range — adjust sliders above</td>
+        </tr>
+        <tr>
+          <td>ACU tier (Standard $0.005/page)</td>
+          <td><span class="badge b-green">✓ Standard tier</span></td>
+          <td style="font-size:12px;color:var(--gray-400)">Document Standard — prebuilt-layout</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer class="foot">
+  <span><strong>Hikma Pharmaceuticals</strong> · AI Engineering · SPC Generator Project</span>
+  <span>Azure AI Foundry · GPT-4.1 · Jun 2026</span>
+</footer>
+
+<script>
+  const TIERS       = [0.00001, 0.001, 0.005];
+  const TIER_LABELS = ['$0.00001', '$0.001', '$0.005'];
+  const INPUT_PER_TOK  = 2.00 / 1_000_000;
+  const OUTPUT_PER_TOK = 8.00 / 1_000_000;
+  const AVG_INPUT      = 3329;
+  const AVG_OUTPUT     = 1872;
+  const AGENT_CALLS    = 16;
+
+  function updateSliderFill(el) {
+    const pct = ((el.value - el.min) / (el.max - el.min)) * 100;
+    el.style.setProperty('--pct', pct + '%');
+  }
+
+  function fmt(n, decimals) {
+    return '$' + n.toFixed(decimals);
+  }
+
+  function calc() {
+    const refEl  = document.getElementById('refPages');
+    const cmcEl  = document.getElementById('cmcPages');
+    const tierEl = document.getElementById('acuTier');
+
+    const refPages = +refEl.value;
+    const cmcPages = +cmcEl.value;
+    const tierIdx  = +tierEl.value - 1;
+    const acuPrice = TIERS[tierIdx];
+
+    updateSliderFill(refEl);
+    updateSliderFill(cmcEl);
+    updateSliderFill(tierEl);
+
+    document.getElementById('refPagesOut').textContent = refPages + ' pg';
+    document.getElementById('cmcPagesOut').textContent = cmcPages + ' pg';
+    document.getElementById('acuTierOut').textContent  = TIER_LABELS[tierIdx];
+
+    const inputCost  = AGENT_CALLS * AVG_INPUT  * INPUT_PER_TOK;
+    const outputCost = AGENT_CALLS * AVG_OUTPUT * OUTPUT_PER_TOK;
+    const refCost    = refPages  * acuPrice;
+    const cmcCost    = cmcPages  * acuPrice;
+    const tokenTotal = inputCost + outputCost;
+    const total      = tokenTotal + refCost + cmcCost;
+
+    document.getElementById('inputCost').textContent  = fmt(inputCost,  3);
+    document.getElementById('outputCost').textContent = fmt(outputCost, 3);
+    document.getElementById('refFormula').textContent = refPages + ' pages × $' + acuPrice.toFixed(5);
+    document.getElementById('cmcFormula').textContent = cmcPages + ' pages × $' + acuPrice.toFixed(5);
+    document.getElementById('refCost').textContent    = fmt(refCost,    3);
+    document.getElementById('cmcCost').textContent    = fmt(cmcCost,    3);
+    document.getElementById('totalCost').textContent  = fmt(total,      3);
+    document.getElementById('tokCostOut').textContent = fmt(tokenTotal, 2);
+    document.getElementById('acuCostOut').textContent = fmt(refCost + cmcCost, 2);
+    document.getElementById('totalOut').textContent   = fmt(total,      2);
+    document.getElementById('kpiTotal').textContent   = fmt(total,      2);
+
+    document.getElementById('p10').textContent   = '$' + Math.round(total * 10);
+    document.getElementById('p50').textContent   = '$' + Math.round(total * 50);
+    document.getElementById('p100').textContent  = '$' + Math.round(total * 100);
+    document.getElementById('p250').textContent  = '$' + Math.round(total * 250);
+    document.getElementById('p500').textContent  = '$' + Math.round(total * 500);
+    document.getElementById('p1000').textContent = '$' + Math.round(total * 1000).toLocaleString();
+  }
+
+  // Attach listeners
+  ['refPages', 'cmcPages', 'acuTier'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calc);
+  });
+
+  // Init
+  ['refPages', 'cmcPages', 'acuTier'].forEach(id => updateSliderFill(document.getElementById(id)));
+  calc();
+</script>
+</body>
+</html>
